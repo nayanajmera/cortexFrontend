@@ -11,7 +11,7 @@ import Profile from "./pages/Profile";
 import { useContext } from "react";    
 import { Toaster } from "react-hot-toast";
 import GlobalLoader from "./components/GlobalLoader";
-import "./app.css";
+import "./App.css";
 const PrivateRoute = ({ children }) => {
     const { token, loading } = useContext(AuthContext);
     if (loading) return <GlobalLoader fullScreen={true} message="Authenticating Cortex..." />;
