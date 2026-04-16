@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // baseURL: 'https://cortex-bb7r.onrender.com/api',
-  baseURL: 'http://localhost:8080/api',
+  baseURL: 'https://cortex-bb7r.onrender.com/api',
+  // baseURL: 'http://localhost:8080/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
