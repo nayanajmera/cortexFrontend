@@ -75,13 +75,19 @@ const Hives = () => {
     return (
         <div className="min-h-screen bg-[#FDFCF8] p-6">
             {/* Navbar */}
-            <nav className="flex items-center justify-between px-8 py-4 bg-white border-b border-stone-200 sticky top-0 z-10 shadow-sm mb-10">
+            <nav className="flex items-center justify-between px-4 md:px-8 py-4 bg-white border-b border-stone-200 sticky top-0 z-10 shadow-sm mb-10">
                 <div 
                     className="cursor-pointer hover:opacity-80 transition"
                     onClick={() => navigate('/dashboard')}
                 >
                     <CortexLogo />
                 </div>
+                <button 
+                    onClick={() => navigate('/dashboard')}
+                    className="flex sm:hidden items-center gap-2 px-3 py-2 text-sm font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 rounded-lg transition"
+                >
+                    <ArrowLeft size={16} /> Back
+                </button>
             </nav>
 
             {/* Header */}
@@ -118,20 +124,20 @@ const Hives = () => {
                 {showCreate && (
                     <div className="mb-8 p-6 bg-white border border-stone-200 rounded-xl shadow-lg animate-fade-in-down">
                         <h3 className="font-bold mb-3">Name your new Hive</h3>
-                        <form onSubmit={handleCreate} className="flex gap-2">
+                        <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-3">
                             <input 
                                 type="text" 
                                 value={newHiveName}
                                 onChange={(e) => setNewHiveName(e.target.value)}
                                 placeholder="e.g. 'Project Alpha'"
-                                className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-black"
+                                className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-1 focus:ring-black"
                                 required
                             />
                             <Button 
                                 type="submit" 
                                 isLoading={isCreating} 
                                 loadingText="Creating..."
-                                className="px-6"
+                                className="px-6 w-full sm:w-auto"
                             >
                                 Create
                             </Button>
@@ -142,20 +148,20 @@ const Hives = () => {
                 {showJoin && (
                     <div className="mb-8 p-6 bg-white border border-stone-200 rounded-xl shadow-lg animate-fade-in-down">
                         <h3 className="font-bold mb-3">Enter Invite Code</h3>
-                        <form onSubmit={handleJoin} className="flex gap-2">
+                        <form onSubmit={handleJoin} className="flex flex-col sm:flex-row gap-3">
                             <input 
                                 type="text" 
                                 value={joinCode}
                                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                                 placeholder="e.g. 'A1B2C3'"
-                                className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-black uppercase tracking-widest font-mono"
+                                className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-1 focus:ring-black uppercase tracking-widest font-mono"
                                 required
                             />
                             <Button 
                                 type="submit" 
                                 isLoading={isJoining} 
                                 loadingText="Joining..."
-                                className="px-6"
+                                className="px-6 w-full sm:w-auto"
                             >
                                 Join
                             </Button>

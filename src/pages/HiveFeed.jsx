@@ -336,7 +336,7 @@ const HiveFeed = () => {
                                             
 
                                             {isMe && (
-                                                <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex gap-3 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
                                                     <button 
                                                         onClick={() => navigate(`/dump/edit/${dump._id}`)}
                                                         className="text-stone-400 hover:text-white"
