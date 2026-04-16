@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import CortexLogo from "../components/CortexLogo";
+import Button from "../components/Button";
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: "", password: "" });
@@ -16,12 +17,18 @@ const Login = () => {
     const onSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        const result = await login(email, password);
-        setIsLoading(false);
-        if (result.success) {
-            navigate("/dashboard", { replace: true });
-        } else {
-            setError(result.error);
+        setError(""); // Clear previous errors
+        try {
+            const result = await login(email, password);
+            if (result.success) {
+                navigate("/dashboard", { replace: true });
+            } else {
+                setError(result.error);
+            }
+        } catch (err) {
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
     useEffect(() => {
@@ -65,13 +72,14 @@ const Login = () => {
                             placeholder="••••••••"
                         />
                     </div>
-                    <button
+                    <Button
                         type="submit"
-                        className="w-full px-4 py-2 font-bold text-white bg-black rounded-lg hover:bg-stone-800 transition duration-200"
-                        disabled={isLoading}
+                        className="w-full"
+                        isLoading={isLoading}
+                        loadingText="Logging in..."
                     >
-                        {isLoading?"Logging in ...":"Login"}
-                    </button>
+                        Login
+                    </Button>
                 </form>
                 <p className="text-sm text-center text-stone-600">
                     Don't have an account? <Link to="/register" className="font-medium text-black underline">Sign up</Link>

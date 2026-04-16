@@ -4,7 +4,7 @@ import api from "../utils/api";
 import { AuthContext } from "../context/AuthContext";
 import { 
     ArrowLeft, Users, Send, MoreVertical, 
-    Trash2, Edit2, Copy, Hash,  Settings, X, UserMinus, LogOut
+    Trash2, Edit2, Copy, Hash,  Settings, X, UserMinus, LogOut, Loader2
 } from "lucide-react";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
@@ -22,6 +22,9 @@ const HiveFeed = () => {
     const [hive, setHive] = useState(null);
     const [dumps, setDumps] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isPosting, setIsPosting] = useState(false);
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -33,11 +36,13 @@ const HiveFeed = () => {
     const isCreator = hive && user && hive.creator === user._id;
 
     const handleRename = async () => {
+        setIsRenaming(true);
         try {
             const res = await api.put(`/groups/${hive._id}`, { name: newName });
             setHive({ ...hive, name: res.data.name });
             toast.success("Renamed successfully");
         } catch (err) { toast.error("Error renaming"); }
+        finally { setIsRenaming(false); }
     };
 
 
@@ -182,6 +187,7 @@ const HiveFeed = () => {
         e.preventDefault();
         if (!formData.content.trim()) return;
 
+        setIsPosting(true);
         try {
             const res = await api.post("/dumps", {
                 title: formData.title.trim(),
@@ -199,6 +205,8 @@ const HiveFeed = () => {
         } catch (err) {
             console.error("Error posting:", err);
             toast.error("Failed to send message");
+        } finally {
+            setIsPosting(false);
         }
     };
 
@@ -374,10 +382,10 @@ const HiveFeed = () => {
                             />
                             <button 
                                 type="submit" 
-                                disabled={!formData.content.trim()}
+                                disabled={!formData.content.trim() || isPosting}
                                 className="p-3 bg-black text-white rounded-xl hover:bg-stone-800 disabled:opacity-50 transition shadow-md"
                             >
-                                <Send size={18} />
+                                {isPosting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                             </button>
                         </div>
                     </form>
@@ -452,7 +460,13 @@ const HiveFeed = () => {
                                 onChange={(e) => setNewName(e.target.value)}
                                 className="flex-1 border p-2 rounded-lg"
                             />
-                            <button onClick={handleRename} className="bg-black text-white px-4 rounded-lg text-sm">Save</button>
+                             <button 
+                                onClick={handleRename} 
+                                disabled={isRenaming}
+                                className="bg-black text-white px-4 rounded-lg text-sm disabled:opacity-50 min-w-[60px] flex items-center justify-center"
+                            >
+                                {isRenaming ? <Loader2 size={14} className="animate-spin" /> : "Save"}
+                            </button>
                         </div>
                     </div>
 

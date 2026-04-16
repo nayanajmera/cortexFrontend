@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import CortexLogo from "../components/CortexLogo";
+import Button from "../components/Button";
 
 const Register = () => {
     const { register, token, loading } = useContext(AuthContext);
@@ -15,6 +16,7 @@ const Register = () => {
         confirmPassword: ""
     });
     const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
 
     useEffect(() => {
@@ -35,18 +37,24 @@ const Register = () => {
             return;
         }
 
-
         if (password.length < 6) {
             setError("Password must be at least 6 characters");
             return;
         }
 
-        const result = await register(name, username, email, password);
-        
-        if (result.success) {
-            navigate("/dashboard", {replace: true});
-        } else {
-            setError(result.error);
+        setIsLoading(true);
+        setError("");
+        try {
+            const result = await register(name, username, email, password);
+            if (result.success) {
+                navigate("/dashboard", {replace: true});
+            } else {
+                setError(result.error);
+            }
+        } catch (err) {
+            setError("Something went wrong. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -141,12 +149,14 @@ const Register = () => {
                         />
                     </div>
 
-                    <button
+                    <Button
                         type="submit"
-                        className="w-full px-4 py-3 font-bold text-white bg-black rounded-lg hover:bg-stone-800 transition duration-200 mt-6"
+                        className="w-full mt-6"
+                        isLoading={isLoading}
+                        loadingText="Signing up..."
                     >
                         Create Account
-                    </button>
+                    </Button>
                 </form>
 
                 <p className="text-sm text-center text-stone-600">

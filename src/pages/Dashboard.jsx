@@ -2,10 +2,11 @@ import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, Search, X, Tag, Type, MessageSquare, Users } from "lucide-react"; // Added Tag & Type icons
+import { Trash2, Plus, Search, X, Tag, Type, MessageSquare, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import CortexLogo from "../components/CortexLogo";
 import ConfirmModal from "../components/ConfirmModal";
+import Button from "../components/Button";
 
 const Dashboard = () => {
     const { user, logout } = useContext(AuthContext);
@@ -20,6 +21,8 @@ const Dashboard = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [dumpToDelete, setDumpToDelete] = useState(null);
     const navigate = useNavigate();
@@ -89,6 +92,7 @@ const Dashboard = () => {
             return toast.error(`Tags must be short. These are too long: ${longTags.join(", ")}`);
         }
 
+        setIsSaving(true);
         try {
             const res = await api.post("/dumps", {
                 title: title.trim() || "Untitled Thought",
@@ -106,6 +110,8 @@ const Dashboard = () => {
         } catch (err) {
             console.error("Error adding dump:", err);
             toast.error("Failed to save dump. Check console.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -117,16 +123,18 @@ const Dashboard = () => {
 
     const confirmDelete = async () => {
         if (!dumpToDelete) return;
+        setIsDeleting(true);
         try {
             await api.delete(`/dumps/${dumpToDelete}`);
             setDumps(dumps.filter(dump => dump._id !== dumpToDelete));
             toast.success("Thought deleted");
+            setDeleteModalOpen(false);
+            setDumpToDelete(null);
         } catch (err) {
             console.error("Error deleting dump:", err);
             toast.error("Failed to delete");
         } finally {
-            setDeleteModalOpen(false);
-            setDumpToDelete(null);
+            setIsDeleting(false);
         }
     };
 
@@ -240,12 +248,14 @@ const Dashboard = () => {
                                     />
                                 </div>
 
-                                <button
+                                <Button
                                     type="submit"
-                                    className="px-6 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-stone-800 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                                    className="px-6"
+                                    isLoading={isSaving}
+                                    loadingText="Saving..."
                                 >
                                     <Plus size={16} /> Save
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     </div>
@@ -349,6 +359,7 @@ const Dashboard = () => {
                 confirmText="Yes, Delete"
                 cancelText="Keep It"
                 isDanger={true}
+                isLoading={isDeleting}
                 onConfirm={confirmDelete}
                 onCancel={() => {
                     setDeleteModalOpen(false);

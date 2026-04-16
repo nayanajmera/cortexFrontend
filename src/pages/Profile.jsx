@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import CortexLogo from "../components/CortexLogo";
+import Button from "../components/Button";
 
 const Profile = () => {
     const { user, logout } = useContext(AuthContext);
@@ -15,6 +16,7 @@ const Profile = () => {
     
     const [stats, setStats] = useState({ dumps: 0, hives: 0 });
     const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editData, setEditData] = useState({ name: "", username: "", email: "", password: "" });
@@ -41,6 +43,7 @@ const Profile = () => {
         setIsEditing(true);
     };
     const handleSave = async () => {
+        setIsSaving(true);
         try {
             const res = await api.put("/auth/profile", editData);
             
@@ -53,6 +56,8 @@ const Profile = () => {
             // Display the specific error message from backend
             const errorMessage = err.response?.data?.msg || "Error updating profile";
             toast.error(errorMessage); 
+        } finally {
+            setIsSaving(false);
         }
     };
     if (!user) return null;
@@ -186,7 +191,14 @@ const Profile = () => {
                             />
                         </div>
                         <div className="flex gap-2 pt-2">
-                            <button onClick={handleSave} className="flex-1 bg-black text-white py-2 rounded-lg font-bold">Save Changes</button>
+                            <Button 
+                                onClick={handleSave} 
+                                className="flex-1"
+                                isLoading={isSaving}
+                                loadingText="Saving..."
+                            >
+                                Save Changes
+                            </Button>
                             <button onClick={() => setIsEditing(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
                         </div>
                     </div>)}

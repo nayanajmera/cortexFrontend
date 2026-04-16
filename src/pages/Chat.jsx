@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Bot, User, FileText } from "lucide-react"; 
+import { ArrowLeft, Send, Bot, User, FileText, Loader2 } from "lucide-react"; 
 import CortexLogo from "../components/CortexLogo";
 
 const Chat = () => {
@@ -126,7 +126,7 @@ const Chat = () => {
                         disabled={loading || !input.trim()}
                         className="absolute right-2 p-2 bg-black text-white rounded-lg hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
-                        <Send size={18} />
+                        {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>
                 </form>
             </div>

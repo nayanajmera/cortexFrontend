@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import Button from "../components/Button";
 
 const EditDump = () => {
     const { id } = useParams();
@@ -64,6 +65,7 @@ const EditDump = () => {
             navigate(-1);
         } catch (err) {
             setError(err.response?.data?.msg || "Error updating dump");
+        } finally {
             setSaving(false);
         }
     };
@@ -173,13 +175,14 @@ const EditDump = () => {
 
 
                     <div className="flex justify-end pt-6 border-t border-stone-100 mt-6">
-                        <button
+                        <Button
                             type="submit"
-                            disabled={saving}
-                            className="px-8 py-3 bg-black text-white font-bold rounded-lg hover:bg-stone-800 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-8"
+                            isLoading={saving}
+                            loadingText="Saving Changes..."
                         >
-                            {saving ? "Saving Changes..." : "Update Thought"}
-                        </button>
+                            Update Thought
+                        </Button>
                     </div>
                 </form>
             </div>

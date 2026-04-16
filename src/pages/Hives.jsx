@@ -6,10 +6,14 @@ import toast from "react-hot-toast";
 import GlobalLoader from "../components/GlobalLoader";
 import CortexLogo from "../components/CortexLogo";
 
+import Button from "../components/Button";
+
 const Hives = () => {
     const navigate = useNavigate();
     const [hives, setHives] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const [isJoining, setIsJoining] = useState(false);
     
 
     const [showCreate, setShowCreate] = useState(false);
@@ -37,6 +41,7 @@ const Hives = () => {
 
     const handleCreate = async (e) => {
         e.preventDefault();
+        setIsCreating(true);
         try {
             const res = await api.post("/groups", { name: newHiveName });
             setHives([res.data, ...hives]);
@@ -45,12 +50,15 @@ const Hives = () => {
             toast.success(`Hive Created! Your Join Code is: ${res.data.joinCode}`, { duration: 5000 });
         } catch (err) {
             toast.error(err.response?.data?.msg || "Error creating hive");
+        } finally {
+            setIsCreating(false);
         }
     };
 
 
     const handleJoin = async (e) => {
         e.preventDefault();
+        setIsJoining(true);
         try {
             const res = await api.post("/groups/join", { joinCode });
             setHives([res.data, ...hives]);
@@ -59,6 +67,8 @@ const Hives = () => {
             toast.success("Joined successfully!");
         } catch (err) {
             toast.error(err.response?.data?.msg || "Invalid Code or Already Joined");
+        } finally {
+            setIsJoining(false);
         }
     };
 
@@ -117,7 +127,14 @@ const Hives = () => {
                                 className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-black"
                                 required
                             />
-                            <button type="submit" className="px-6 bg-black text-white font-bold rounded-lg">Create</button>
+                            <Button 
+                                type="submit" 
+                                isLoading={isCreating} 
+                                loadingText="Creating..."
+                                className="px-6"
+                            >
+                                Create
+                            </Button>
                         </form>
                     </div>
                 )}
@@ -134,7 +151,14 @@ const Hives = () => {
                                 className="flex-1 p-3 border border-stone-200 rounded-lg outline-none focus:ring-2 focus:ring-black uppercase tracking-widest font-mono"
                                 required
                             />
-                            <button type="submit" className="px-6 bg-black text-white font-bold rounded-lg">Join</button>
+                            <Button 
+                                type="submit" 
+                                isLoading={isJoining} 
+                                loadingText="Joining..."
+                                className="px-6"
+                            >
+                                Join
+                            </Button>
                         </form>
                     </div>
                 )}
