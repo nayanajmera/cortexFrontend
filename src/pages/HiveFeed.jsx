@@ -176,9 +176,16 @@ export default function HiveFeed() {
             });
         });
 
+        socket.on('hive_membership_updated', ({ group }) => {
+            if (group && group._id === id) {
+                setHive((prevHive) => prevHive ? { ...prevHive, ...group, members: group.members || prevHive.members } : group);
+            }
+        });
+
         return () => {
             socket.off('connect');
             socket.off('new_dump');
+            socket.off('hive_membership_updated');
             socket.emit('leave_hive', id);
             socket.disconnect();
         };
