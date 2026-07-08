@@ -8,7 +8,7 @@ import CortexLogo from "../components/CortexLogo";
 import ConfirmModal from "../components/ConfirmModal";
 import Button from "../components/Button";
 
-const Dashboard = () => {
+export default function Dashboard() {
     const { user, logout } = useContext(AuthContext);
     const [dumps, setDumps] = useState([]);
 
@@ -369,5 +369,3 @@ const Dashboard = () => {
         </div>
     );
 };
-
-export default Dashboard;

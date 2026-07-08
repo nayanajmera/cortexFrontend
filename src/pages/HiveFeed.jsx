@@ -10,8 +10,9 @@ import { io } from "socket.io-client";
 import toast from "react-hot-toast";
 import ConfirmModal from "../components/ConfirmModal";
 import GlobalLoader from "../components/GlobalLoader";
+import { SOCKET_URL } from "../config";
 
-const HiveFeed = () => {
+export default function HiveFeed() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
@@ -153,20 +154,19 @@ const HiveFeed = () => {
         const token = localStorage.getItem('token');
         if (!token || !id || !user) return;
 
-        const socket = io("https://cortex-bb7r.onrender.com", {
+        const socket = io(SOCKET_URL, {
             auth: { token: token },
             transports: ["websocket", "polling"]
         });
 
         socket.on('connect', () => {
-            console.log("WebSocket connected. Joining Hive room:", id);
             socket.emit('join_hive', id);
         });
 
         socket.on('new_dump', (newDump) => {
             setDumps((prevDumps) => {
-                // Skip if it came from us (already added via optimistic update)
-                const isFromMe = newDump.user._id === user._id || newDump.user === user._id;
+                // Skip if it came from user (already added via optimistic update)
+                const isFromMe = newDump.user._id === user._id;
                 if (isFromMe) return prevDumps;
                 
 
@@ -177,6 +177,8 @@ const HiveFeed = () => {
         });
 
         return () => {
+            socket.off('connect');
+            socket.off('new_dump');
             socket.emit('leave_hive', id);
             socket.disconnect();
         };
@@ -197,7 +199,7 @@ const HiveFeed = () => {
 
             const newDump = { 
                 ...res.data, 
-                user: { _id: user._id, username: user.username,name: user.name } 
+                user: { _id: user._id, username: user.username, name: user.name } 
             };
             setDumps([...dumps, newDump]);
             setFormData({ title: "", content: "" });
@@ -283,13 +285,12 @@ const HiveFeed = () => {
                     {dumps.length === 0 ? (
                         <div className="text-center py-10 opacity-50">
                             <p className="text-sm bg-white inline-block px-4 py-2 rounded-full shadow-sm">
-                                No messages yet. Say hello! 👋
+                                No dumps yet. Say hello! 👋
                             </p>
                         </div>
                     ) : (
                         dumps.map((dump) => {
-                            const isMe = dump.user._id === user._id || dump.user === user._id;
-                            
+                            const isMe = dump.user._id === user._id;
                             return (
                                 <div 
                                     key={dump._id} 
@@ -328,12 +329,10 @@ const HiveFeed = () => {
                                             {dump.content}
                                         </p>
 
-
                                         <div className={`flex items-center justify-between mt-2 pt-2 border-t ${isMe ? "border-stone-700" : "border-stone-100"}`}>
                                             <span className={`text-[10px] ${isMe ? "text-stone-400" : "text-stone-400"}`}>
                                                 {new Date(dump.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
-                                            
 
                                             {isMe && (
                                                 <div className="flex gap-3 md:opacity-0 md:group-hover:opacity-100 opacity-100 transition-opacity">
@@ -392,7 +391,6 @@ const HiveFeed = () => {
                 </div>
             </div>
 
-
             <div className="w-72 bg-white border-l border-stone-200 hidden md:flex flex-col">
                 <div className="p-6 border-b border-stone-100">
                     <h2 className="font-bold text-stone-800">Hive Details</h2>
@@ -442,7 +440,6 @@ const HiveFeed = () => {
                 </div>
             </div>
 
-            
             {showSettings && (
             <div className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
                 <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl animate-fade-in-up">
@@ -450,8 +447,6 @@ const HiveFeed = () => {
                         <h2 className="text-xl font-bold">Hive Settings</h2>
                         <button onClick={() => setShowSettings(false)}><X /></button>
                     </div>
-
-
                     <div className="mb-6">
                         <label className="text-xs font-bold text-stone-400 uppercase">Rename Hive</label>
                         <div className="flex gap-2 mt-2">
@@ -469,7 +464,6 @@ const HiveFeed = () => {
                             </button>
                         </div>
                     </div>
-
 
                     <div className="mb-8">
                         <label className="text-xs font-bold text-stone-400 uppercase">Manage Members</label>
@@ -489,8 +483,6 @@ const HiveFeed = () => {
                             ))}
                         </div>
                     </div>
-
-
                     <div className="pt-6 border-t border-stone-100">
                         <button 
                             onClick={handleDeleteHive}
@@ -502,8 +494,6 @@ const HiveFeed = () => {
                 </div>
             </div>
             )}
-
-
             <ConfirmModal 
                 {...modalConfig} 
                 onCancel={() => setModalConfig({ isOpen: false })} 
@@ -511,5 +501,3 @@ const HiveFeed = () => {
         </div>
     );
 };
-
-export default HiveFeed;

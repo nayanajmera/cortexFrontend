@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import CortexLogo from "../components/CortexLogo";
 import Button from "../components/Button";
 
-const Login = () => {
+export default function Login(){
     const [formData, setFormData] = useState({ email: "", password: "" });
     const { login, token, loading } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -88,5 +88,3 @@ const Login = () => {
         </div>
     );
 };
-
-export default Login;

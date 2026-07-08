@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import CortexLogo from "../components/CortexLogo";
 import Button from "../components/Button";
 
-const Profile = () => {
+export default function Profile(){
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     
@@ -208,5 +208,3 @@ const Profile = () => {
         </div>
     );
 };
-
-export default Profile;

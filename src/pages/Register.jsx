@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import CortexLogo from "../components/CortexLogo";
 import Button from "../components/Button";
 
-const Register = () => {
+export default function Register(){
     const { register, token, loading } = useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -166,5 +166,3 @@ const Register = () => {
         </div>
     );
 };
-
-export default Register;

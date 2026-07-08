@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Bot, User, FileText, Loader2 } from "lucide-react"; 
 import CortexLogo from "../components/CortexLogo";
 
-const Chat = () => {
+export default function Chat(){
     const navigate = useNavigate();
     const [messages, setMessages] = useState([
         { role: "ai", content: "Hello! I am Cortex. Ask me anything about your notes." }
@@ -133,5 +133,3 @@ const Chat = () => {
         </div>
     );
 };
-
-export default Chat;

@@ -3,10 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import Button from "../components/Button";
 
-const EditDump = () => {
+export default function EditDump(){
     const { id } = useParams();
     const navigate = useNavigate();
-    
     const [formData, setFormData] = useState({
         title: "",
         content: "",
@@ -16,7 +15,6 @@ const EditDump = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
-
 
     useEffect(() => {
         const fetchDump = async () => {
@@ -189,5 +187,3 @@ const EditDump = () => {
         </div>
     );
 };
-
-export default EditDump;

@@ -8,7 +8,7 @@ import CortexLogo from "../components/CortexLogo";
 
 import Button from "../components/Button";
 
-const Hives = () => {
+export default function Hives(){
     const navigate = useNavigate();
     const [hives, setHives] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -205,5 +205,3 @@ const Hives = () => {
         </div>
     );
 };
-
-export default Hives;

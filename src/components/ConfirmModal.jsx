@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import Button from './Button';
 
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, onSecondaryAction, confirmText = "Confirm", cancelText = "Cancel", isDanger = false, requireText = null, isLoading = false }) => {
+export default function ConfirmModal ({ isOpen, title, message, onConfirm, onCancel, onSecondaryAction, confirmText = "Confirm", cancelText = "Cancel", isDanger = false, requireText = null, isLoading = false }){
     const [inputValue, setInputValue] = useState("");
     if (!isOpen) return null;
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
             <div className="bg-white w-full max-sm:max-w-xs max-w-sm rounded-2xl p-6 shadow-2xl relative animate-scale-up border border-stone-200">
@@ -64,4 +63,3 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel, onSecondary
     );
 };
 
-export default ConfirmModal;
