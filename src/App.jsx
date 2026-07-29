@@ -24,7 +24,7 @@ function App() {
         position="top-center" 
         toastOptions={{
           style: {
-            background: '#292524', // stone-800
+            background: '#292524',
             color: '#fff',
             borderRadius: '12px',
           },

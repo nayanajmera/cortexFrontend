@@ -97,7 +97,10 @@ export default function Hives(){
                         <ArrowLeft size={20} />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-stone-800 tracking-tight">My Hives 🐝</h1>
+                        <h1 className="text-2xl font-bold text-stone-800 tracking-tight flex items-center gap-2">
+                            My Hives
+                            <Users size={20} className="text-stone-600" />
+                        </h1>
                         <p className="text-stone-500 text-sm">Collaborate with your network</p>
                     </div>
                 </div>

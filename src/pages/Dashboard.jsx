@@ -40,7 +40,7 @@ export default function Dashboard() {
             setIsSearching(false);
             setLoading(false);
         } catch (err) {
-            console.error("Error fetching dumps:", err);
+            console.error("Error fetching dumps : ", err);
             setLoading(false);
         }
     };
@@ -57,7 +57,7 @@ export default function Dashboard() {
             setIsSearching(true);
             setLoading(false);
         } catch (err) {
-            console.error("Error searching:", err);
+            console.error("Error searching : ", err);
             setLoading(false);
         }
     };
