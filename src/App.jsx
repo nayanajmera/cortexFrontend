@@ -12,11 +12,19 @@ import { useContext } from "react";
 import { Toaster } from "react-hot-toast";
 import GlobalLoader from "./components/GlobalLoader";
 import "./App.css";
+
 const PrivateRoute = ({ children }) => {
     const { token, loading } = useContext(AuthContext);
     if (loading) return <GlobalLoader fullScreen={true} message="Authenticating Cortex..." />;
-    return token ? children : <Navigate to="/login" />;
+    return token ? children : <Navigate to="/login" replace />;
 };
+
+const PublicRoute = ({ children }) => {
+    const { token, loading } = useContext(AuthContext);
+    if (loading) return <GlobalLoader fullScreen={true} message="Authenticating Cortex..." />;
+    return token ? <Navigate to="/dashboard" replace /> : children;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -32,9 +40,21 @@ function App() {
       />
       <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/login" element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } />
+          <Route path="/register" element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          } />
           <Route path="/dashboard" element={
             <PrivateRoute>
               <Dashboard />
@@ -65,7 +85,7 @@ function App() {
                   <Profile />
               </PrivateRoute>
           } />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

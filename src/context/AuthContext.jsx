@@ -1,14 +1,13 @@
 import { createContext, useState, useEffect } from "react";
 import api from "../utils/api"; 
 import setAuthToken from "../utils/setAuthToken"; 
-import {redirect} from "react-router-dom";
+
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(localStorage.getItem("token"));
-    const [loading, setLoading] = useState(true);
-
+    const [token, setToken] = useState(() => localStorage.getItem("token"));
+    const [loading, setLoading] = useState(() => Boolean(localStorage.getItem("token")));
 
     const loadUser = async () => {
         try {
@@ -16,6 +15,7 @@ export const AuthProvider = ({ children }) => {
             setUser(res.data);
         } catch (err) {
             localStorage.removeItem("token");
+            setAuthToken(null);
             setToken(null);
             setUser(null);
         } finally {
@@ -23,13 +23,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
     const login = async (email, password) => {
         const body = JSON.stringify({ email, password });
 
         try {
             const res = await api.post("/auth/login", body);
             localStorage.setItem("token", res.data.token);
+            setAuthToken(res.data.token);
             setToken(res.data.token);
             loadUser();
             return { success: true };
@@ -39,13 +39,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
     const register = async (name, username, email, password) => {
          const body = JSON.stringify({ name, username, email, password });
 
          try {
              const res = await api.post("/auth/register", body);
              localStorage.setItem("token", res.data.token);
+             setAuthToken(res.data.token);
              setToken(res.data.token);
              loadUser();
              return { success: true };
@@ -54,16 +54,16 @@ export const AuthProvider = ({ children }) => {
          }
     };
 
-
     const logout = () => {
         localStorage.removeItem("token");
+        setAuthToken(null);
         setToken(null);
         setUser(null);
     };
 
     useEffect(() => {
         if (localStorage.getItem("token")) {
-            setAuthToken(localStorage.token); 
+            setAuthToken(localStorage.getItem("token")); 
             loadUser();
         } else {
             setLoading(false); 
