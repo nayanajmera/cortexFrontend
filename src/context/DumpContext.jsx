@@ -41,6 +41,23 @@ export const DumpProvider = ({ children }) => {
         setDumps((prev) => [newDump, ...prev]);
     }, []);
 
+    const replaceDump = useCallback((tempId, realDump) => {
+        setDumps((prev) =>
+            prev.map((dump) => (dump._id === tempId ? realDump : dump))
+        );
+    }, []);
+
+    const restoreDump = useCallback((dump, index) => {
+        setDumps((prev) => {
+            if (typeof index === "number" && index >= 0 && index <= prev.length) {
+                const next = [...prev];
+                next.splice(index, 0, dump);
+                return next;
+            }
+            return [dump, ...prev];
+        });
+    }, []);
+
     const updateDump = useCallback((updatedDump) => {
         setDumps((prev) =>
             prev.map((dump) => (dump._id === updatedDump._id ? updatedDump : dump))
@@ -70,6 +87,8 @@ export const DumpProvider = ({ children }) => {
                 error,
                 fetchDumps,
                 addDump,
+                replaceDump,
+                restoreDump,
                 updateDump,
                 deleteDump,
                 setDumps
@@ -79,4 +98,3 @@ export const DumpProvider = ({ children }) => {
         </DumpContext.Provider>
     );
 };
-

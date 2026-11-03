@@ -16,6 +16,8 @@ export default function Dashboard() {
         loading: contextLoading, 
         fetchDumps, 
         addDump, 
+        replaceDump,
+        restoreDump,
         deleteDump 
     } = useContext(DumpContext);
 
@@ -30,8 +32,6 @@ export default function Dashboard() {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
 
-    const [isSaving, setIsSaving] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [dumpToDelete, setDumpToDelete] = useState(null);
     const navigate = useNavigate();
@@ -71,6 +71,7 @@ export default function Dashboard() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    // 3. Optimistic Add Dump
     const handleAddDump = async (e) => {
         e.preventDefault();
         const { title, content, tags } = formData;
@@ -91,24 +92,38 @@ export default function Dashboard() {
             return toast.error(`Tags must be short. These are too long: ${longTags.join(", ")}`);
         }
 
-        setIsSaving(true);
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const optimisticDump = {
+            _id: tempId,
+            title: title.trim() || "Untitled Thought",
+            content: content,
+            tags: tagArray,
+            createdAt: new Date().toISOString(),
+            user: user ? { _id: user._id, username: user.username } : "me",
+            isOptimistic: true
+        };
+
+        // Instantly add to UI & clear form without blocking or showing loader
+        addDump(optimisticDump);
+        setFormData({ title: "", content: "", tags: "" });
+
         try {
             const res = await api.post("/dumps", {
-                title: title.trim() || "Untitled Thought",
-                content: content,
-                tags: tagArray
+                title: optimisticDump.title,
+                content: optimisticDump.content,
+                tags: optimisticDump.tags
             });
 
-            addDump(res.data);
-
-            setFormData({ title: "", content: "", tags: "" });
+            // Replace temp placeholder with the confirmed server note
+            replaceDump(tempId, res.data);
             toast.success("Thought saved!");
 
         } catch (err) {
             console.error("Error adding dump:", err);
-            toast.error("Failed to save dump. Check console.");
-        } finally {
-            setIsSaving(false);
+            // Rollback optimistic add and restore user inputs
+            deleteDump(tempId);
+            setFormData({ title, content, tags });
+            toast.error(err.response?.data?.msg || "Failed to save thought. Content restored.");
         }
     };
 
@@ -118,23 +133,36 @@ export default function Dashboard() {
         setDeleteModalOpen(true);
     };
 
+    // 4. Optimistic Delete Dump
     const confirmDelete = async () => {
         if (!dumpToDelete) return;
-        setIsDeleting(true);
+
+        const idToDelete = dumpToDelete;
+        const dumpIndex = dumps.findIndex(d => d._id === idToDelete);
+        const dumpBackup = dumps[dumpIndex];
+        const searchBackup = isSearching ? searchResults.find(d => d._id === idToDelete) : null;
+
+        // Instantly close modal and remove from UI without waiting for server
+        setDeleteModalOpen(false);
+        setDumpToDelete(null);
+        deleteDump(idToDelete);
+        if (isSearching) {
+            setSearchResults(prev => prev.filter(dump => dump._id !== idToDelete));
+        }
+
         try {
-            await api.delete(`/dumps/${dumpToDelete}`);
-            deleteDump(dumpToDelete);
-            if (isSearching) {
-                setSearchResults(prev => prev.filter(dump => dump._id !== dumpToDelete));
-            }
+            await api.delete(`/dumps/${idToDelete}`);
             toast.success("Thought deleted");
-            setDeleteModalOpen(false);
-            setDumpToDelete(null);
         } catch (err) {
             console.error("Error deleting dump:", err);
-            toast.error("Failed to delete");
-        } finally {
-            setIsDeleting(false);
+            // Rollback: restore note in previous position
+            if (dumpBackup) {
+                restoreDump(dumpBackup, dumpIndex);
+            }
+            if (isSearching && searchBackup) {
+                setSearchResults(prev => [searchBackup, ...prev]);
+            }
+            toast.error("Failed to delete thought. Restored.");
         }
     };
 
@@ -251,8 +279,6 @@ export default function Dashboard() {
                                 <Button
                                     type="submit"
                                     className="px-6"
-                                    isLoading={isSaving}
-                                    loadingText="Saving..."
                                 >
                                     <Plus size={16} /> Save
                                 </Button>
@@ -283,15 +309,19 @@ export default function Dashboard() {
                             <p>{isSearching ? "No matching thoughts found." : "Your brain is empty."}</p>
                         </div>
                     ) : (displayedDumps.map((dump) => {
-                        const dumpUserId = typeof dump.user === 'string' ? dump.user : dump.user._id;
+                        const dumpUserId = typeof dump.user === 'string' ? dump.user : dump.user?._id;
                         const isOwner = user && dumpUserId === user._id;
+                        const isTemp = dump._id.toString().startsWith('temp-');
 
                         return (
                             <div
                                 key={dump._id}
-                                onClick={() => isOwner && navigate(`/dump/edit/${dump._id}`)}
+                                onClick={() => {
+                                    if (isTemp) return;
+                                    if (isOwner) navigate(`/dump/edit/${dump._id}`);
+                                }}
                                 className={`group p-6 bg-white border border-stone-200 rounded-xl shadow-sm relative transition-all 
-                                        ${isOwner ? "cursor-pointer hover:shadow-md hover:border-black" : "cursor-default opacity-90"}
+                                        ${isTemp ? "opacity-75 cursor-wait" : isOwner ? "cursor-pointer hover:shadow-md hover:border-black" : "cursor-default opacity-90"}
                                     `}
                             >
                                 {dump.group && (
@@ -359,7 +389,6 @@ export default function Dashboard() {
                 confirmText="Yes, Delete"
                 cancelText="Keep It"
                 isDanger={true}
-                isLoading={isDeleting}
                 onConfirm={confirmDelete}
                 onCancel={() => {
                     setDeleteModalOpen(false);
