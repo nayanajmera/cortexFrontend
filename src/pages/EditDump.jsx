@@ -1,18 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import Button from "../components/Button";
+import { DumpContext } from "../context/DumpContext";
 
 export default function EditDump(){
     const { id } = useParams();
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        title: "",
-        content: "",
-        tags: "",
-        isPrivate: true
+    const { dumps, updateDump } = useContext(DumpContext);
+
+    const cachedDump = dumps.find(d => d._id === id);
+
+    const [formData, setFormData] = useState(() => {
+        if (cachedDump) {
+            return {
+                title: cachedDump.title || "", 
+                content: cachedDump.content || "",
+                tags: cachedDump.tags ? (Array.isArray(cachedDump.tags) ? cachedDump.tags.join(", ") : cachedDump.tags) : "",
+                isPrivate: cachedDump.isPrivate !== undefined ? cachedDump.isPrivate : true
+            };
+        }
+        return {
+            title: "",
+            content: "",
+            tags: "",
+            isPrivate: true
+        };
     });
-    const [loading, setLoading] = useState(true);
+
+    const [loading, setLoading] = useState(() => !cachedDump);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -25,14 +41,17 @@ export default function EditDump(){
                 setFormData({
                     title: dump.title || "", 
                     content: dump.content || "",
-                    tags: dump.tags ? dump.tags.join(", ") : "",
-                    isPrivate: dump.isPrivate
+                    tags: dump.tags ? (Array.isArray(dump.tags) ? dump.tags.join(", ") : dump.tags) : "",
+                    isPrivate: dump.isPrivate !== undefined ? dump.isPrivate : true
                 });
+                updateDump(dump);
                 setLoading(false);
             } catch (err) {
-                console.error("Error fetching dump:", err);
-                setError("Could not load this dump. It might have been deleted.");
-                setLoading(false);
+                if (!cachedDump) {
+                    console.error("Error fetching dump:", err);
+                    setError("Could not load this dump. It might have been deleted.");
+                    setLoading(false);
+                }
             }
         };
         fetchDump();
@@ -53,13 +72,14 @@ export default function EditDump(){
                 .map(tag => tag.trim())
                 .filter(tag => tag !== "");
             
-            await api.put(`/dumps/${id}`, {
+            const res = await api.put(`/dumps/${id}`, {
                 title: formData.title,
                 content: formData.content,
                 tags: formattedTags,
                 isPrivate: formData.isPrivate
             });
             
+            updateDump(res.data);
             navigate(-1);
         } catch (err) {
             setError(err.response?.data?.msg || "Error updating dump");

@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { DumpContext } from "../context/DumpContext";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Plus, Search, X, Tag, Type, MessageSquare, Users } from "lucide-react";
@@ -9,8 +10,14 @@ import ConfirmModal from "../components/ConfirmModal";
 import Button from "../components/Button";
 
 export default function Dashboard() {
-    const { user, logout } = useContext(AuthContext);
-    const [dumps, setDumps] = useState([]);
+    const { user } = useContext(AuthContext);
+    const { 
+        dumps, 
+        loading: contextLoading, 
+        fetchDumps, 
+        addDump, 
+        deleteDump 
+    } = useContext(DumpContext);
 
     const [formData, setFormData] = useState({
         title: "",
@@ -20,57 +27,49 @@ export default function Dashboard() {
 
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, setIsSearching] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearchLoading, setIsSearchLoading] = useState(false);
+
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [dumpToDelete, setDumpToDelete] = useState(null);
     const navigate = useNavigate();
 
-    // 1. Fetch Dumps
+    // 1. Fetch Dumps (reuses cache if already loaded)
     useEffect(() => {
         fetchDumps();
-    }, []);
+    }, [fetchDumps]);
 
-    const fetchDumps = async () => {
-        setLoading(true);
-        try {
-            const res = await api.get("/dumps");
-            setDumps(res.data);
-            setIsSearching(false);
-            setLoading(false);
-        } catch (err) {
-            console.error("Error fetching dumps : ", err);
-            setLoading(false);
-        }
-    };
+    const displayedDumps = isSearching ? searchResults : dumps;
+    const loading = isSearching ? isSearchLoading : contextLoading;
 
     // 2. Search
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
 
-        setLoading(true);
+        setIsSearchLoading(true);
         try {
             const res = await api.get(`/dumps/search?query=${searchQuery}`);
-            setDumps(res.data);
+            setSearchResults(res.data);
             setIsSearching(true);
-            setLoading(false);
         } catch (err) {
             console.error("Error searching : ", err);
-            setLoading(false);
+        } finally {
+            setIsSearchLoading(false);
         }
     };
 
     const clearSearch = () => {
         setSearchQuery("");
-        fetchDumps();
+        setIsSearching(false);
+        setSearchResults([]);
     };
 
     const onChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
 
     const handleAddDump = async (e) => {
         e.preventDefault();
@@ -100,9 +99,7 @@ export default function Dashboard() {
                 tags: tagArray
             });
 
-            if (!isSearching) {
-                setDumps([res.data, ...dumps]);
-            }
+            addDump(res.data);
 
             setFormData({ title: "", content: "", tags: "" });
             toast.success("Thought saved!");
@@ -126,7 +123,10 @@ export default function Dashboard() {
         setIsDeleting(true);
         try {
             await api.delete(`/dumps/${dumpToDelete}`);
-            setDumps(dumps.filter(dump => dump._id !== dumpToDelete));
+            deleteDump(dumpToDelete);
+            if (isSearching) {
+                setSearchResults(prev => prev.filter(dump => dump._id !== dumpToDelete));
+            }
             toast.success("Thought deleted");
             setDeleteModalOpen(false);
             setDumpToDelete(null);
@@ -264,11 +264,11 @@ export default function Dashboard() {
                 <div className="space-y-4">
                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-2">
                         {isSearching
-                            ? (dumps.length > 0 && dumps[0].isFallback ? `Found ${dumps.length} Keyword Matches` : `Found ${dumps.length} Results`)
+                            ? (displayedDumps.length > 0 && displayedDumps[0].isFallback ? `Found ${displayedDumps.length} Keyword Matches` : `Found ${displayedDumps.length} Results`)
                             : "Recent Dumps"}
                     </h3>
 
-                    {isSearching && dumps.length > 0 && dumps[0].isFallback && (
+                    {isSearching && displayedDumps.length > 0 && displayedDumps[0].isFallback && (
                         <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
                             No exact semantic matches found. Falling back to keyword search.
                         </div>
@@ -278,11 +278,11 @@ export default function Dashboard() {
                         <div className="animate-pulse space-y-4">
                             {[1, 2, 3].map(i => <div key={i} className="h-24 bg-stone-100 rounded-xl"></div>)}
                         </div>
-                    ) : dumps.length === 0 ? (
+                    ) : displayedDumps.length === 0 ? (
                         <div className="text-center py-10 text-stone-400 bg-stone-50 rounded-xl border border-dashed border-stone-200">
                             <p>{isSearching ? "No matching thoughts found." : "Your brain is empty."}</p>
                         </div>
-                    ) : (dumps.map((dump) => {
+                    ) : (displayedDumps.map((dump) => {
                         const dumpUserId = typeof dump.user === 'string' ? dump.user : dump.user._id;
                         const isOwner = user && dumpUserId === user._id;
 

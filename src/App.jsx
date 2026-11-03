@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, AuthContext } from "./context/AuthContext";
+import { DumpProvider } from "./context/DumpContext";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import EditDump from "./pages/EditDump";
@@ -28,66 +29,68 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Toaster 
-        position="top-center" 
-        toastOptions={{
-          style: {
-            background: '#292524',
-            color: '#fff',
-            borderRadius: '12px',
-          },
-        }} 
-      />
-      <Router>
-        <Routes>
-          <Route path="/" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          } />
-          <Route path="/dump/edit/:id" element={
+      <DumpProvider>
+        <Toaster 
+          position="top-center" 
+          toastOptions={{
+            style: {
+              background: '#292524',
+              color: '#fff',
+              borderRadius: '12px',
+            },
+          }} 
+        />
+        <Router>
+          <Routes>
+            <Route path="/" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="/login" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="/register" element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            } />
+            <Route path="/dashboard" element={
               <PrivateRoute>
-                  <EditDump />
+                <Dashboard />
               </PrivateRoute>
-          } />
-          <Route path="/chat" element={
-            <PrivateRoute>
-                <Chat />
-            </PrivateRoute>
-          } />
-          <Route path="/hives" element={
+            } />
+            <Route path="/dump/edit/:id" element={
+                <PrivateRoute>
+                    <EditDump />
+                </PrivateRoute>
+            } />
+            <Route path="/chat" element={
               <PrivateRoute>
-                  <Hives />
+                  <Chat />
               </PrivateRoute>
-          } />
-          <Route path="/hive/:id" element={
-              <PrivateRoute>
-                  <HiveFeed />
-              </PrivateRoute>
-          } />
-          <Route path="/profile" element={
-              <PrivateRoute>
-                  <Profile />
-              </PrivateRoute>
-          } />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
+            } />
+            <Route path="/hives" element={
+                <PrivateRoute>
+                    <Hives />
+                </PrivateRoute>
+            } />
+            <Route path="/hive/:id" element={
+                <PrivateRoute>
+                    <HiveFeed />
+                </PrivateRoute>
+            } />
+            <Route path="/profile" element={
+                <PrivateRoute>
+                    <Profile />
+                </PrivateRoute>
+            } />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Router>
+      </DumpProvider>
     </AuthProvider>
   );
 }
