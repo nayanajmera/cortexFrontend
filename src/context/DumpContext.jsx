@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, useContext, useCallback } from "react";
+import { createContext, useState, useEffect, useContext, useCallback, useRef } from "react";
 import api from "../utils/api";
 import { AuthContext } from "./AuthContext";
 
@@ -11,34 +11,70 @@ export const DumpProvider = ({ children }) => {
     const [hasLoaded, setHasLoaded] = useState(false);
     const [error, setError] = useState(null);
 
-    // Fetch dumps with client caching
+    // Safeguards for background revalidation
+    const isFetchingRef = useRef(false);
+    const lastFetchedRef = useRef(0);
+    const MIN_INTERVAL = 15000; // 15-second throttle to prevent excess network requests
+
+    // Fetch dumps with client caching & safe background revalidation
     const fetchDumps = useCallback(async (force = false) => {
-        // If already cached and not forced, do not refetch
-        if (hasLoaded && !force) {
+        const now = Date.now();
+
+        // 1. Prevent overlapping requests
+        if (isFetchingRef.current) return;
+
+        // 2. Throttle background revalidation so we don't spam the server on rapid navigation
+        if (hasLoaded && !force && (now - lastFetchedRef.current < MIN_INTERVAL)) {
             return;
         }
 
-        // Only show loading spinner on initial fetch when there is no cached data
+        // 3. Only show a visible loader on initial fetch when there is no cached data at all
         if (!hasLoaded) {
             setLoading(true);
         }
+
+        isFetchingRef.current = true;
         setError(null);
 
         try {
             const res = await api.get("/dumps");
-            setDumps(res.data);
+            lastFetchedRef.current = Date.now();
+
+            // 4. Safe state update: never overwrite any in-flight optimistic notes
+            setDumps((prev) => {
+                const optimisticNotes = prev.filter(
+                    (d) => d._id && d._id.toString().startsWith("temp-")
+                );
+                if (optimisticNotes.length === 0) {
+                    return res.data;
+                }
+                const serverIds = new Set(res.data.map((d) => d._id));
+                const pending = optimisticNotes.filter((o) => !serverIds.has(o._id));
+                return [...pending, ...res.data];
+            });
+
             setHasLoaded(true);
         } catch (err) {
             console.error("Error fetching dumps:", err);
-            setError("Error loading notes");
+            // 5. Silent failure during background sync so cached notes remain intact
+            if (!hasLoaded) {
+                setError("Error loading notes");
+            }
         } finally {
+            isFetchingRef.current = false;
             setLoading(false);
         }
     }, [hasLoaded]);
 
     // Helpers to keep cache in sync
     const addDump = useCallback((newDump) => {
-        setDumps((prev) => [newDump, ...prev]);
+        setDumps((prev) => {
+            // Avoid duplicates if already present
+            if (prev.some((d) => d._id === newDump._id)) {
+                return prev;
+            }
+            return [newDump, ...prev];
+        });
     }, []);
 
     const replaceDump = useCallback((tempId, realDump) => {
@@ -75,6 +111,8 @@ export const DumpProvider = ({ children }) => {
             setHasLoaded(false);
             setLoading(false);
             setError(null);
+            lastFetchedRef.current = 0;
+            isFetchingRef.current = false;
         }
     }, [token]);
 

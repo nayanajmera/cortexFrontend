@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { AuthContext } from "../context/AuthContext";
+import { DumpContext } from "../context/DumpContext";
 import { 
     ArrowLeft, Users, Send, MoreVertical, 
     Trash2, Edit2, Copy, Hash,  Settings, X, UserMinus, LogOut, Loader2
@@ -16,6 +17,7 @@ export default function HiveFeed() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
+    const { addDump, deleteDump, fetchDumps } = useContext(DumpContext);
     const [showSettings, setShowSettings] = useState(false);
     const [newName, setNewName] = useState("");
     const bottomRef = useRef(null);
@@ -91,6 +93,7 @@ export default function HiveFeed() {
                 try {
                     await api.delete(`/groups/${hive._id}/leave`);
                     toast.success("Successfully left the Hive. Your notes are now private.");
+                    fetchDumps(true);
                     navigate("/hives");
                 } catch (err) { 
                     toast.error(err.response?.data?.msg || "Error leaving hive"); 
@@ -112,6 +115,7 @@ export default function HiveFeed() {
                 try {
                     await api.delete(`/groups/${hive._id}?keepDumps=${keepDumps}`);
                     toast.success("Hive destroyed");
+                    fetchDumps(true);
                     navigate("/hives");
                 } catch (err) { toast.error("Error deleting hive"); }
                 setModalConfig({ isOpen: false });
@@ -164,16 +168,19 @@ export default function HiveFeed() {
         });
 
         socket.on('new_dump', (newDump) => {
+            const isFromMe = newDump.user && (newDump.user._id === user._id || newDump.user === user._id);
+            if (isFromMe) return;
+
             setDumps((prevDumps) => {
-                // Skip if it came from user (already added via optimistic update)
-                const isFromMe = newDump.user._id === user._id;
-                if (isFromMe) return prevDumps;
-                
-
                 if (prevDumps.some(d => d._id === newDump._id)) return prevDumps;
-
                 return [...prevDumps, newDump];
             });
+
+            const populatedDump = {
+                ...newDump,
+                group: newDump.group && typeof newDump.group === 'object' ? newDump.group : (hive ? { _id: hive._id, name: hive.name } : { _id: id })
+            };
+            addDump(populatedDump);
         });
 
         socket.on('hive_membership_updated', ({ group }) => {
@@ -189,7 +196,7 @@ export default function HiveFeed() {
             socket.emit('leave_hive', id);
             socket.disconnect();
         };
-    }, [id, user]);
+    }, [id, user, hive, addDump]);
 
 
     const handlePost = async (e) => {
@@ -206,9 +213,11 @@ export default function HiveFeed() {
 
             const newDump = { 
                 ...res.data, 
-                user: { _id: user._id, username: user.username, name: user.name } 
+                user: { _id: user._id, username: user.username, name: user.name },
+                group: hive ? { _id: hive._id, name: hive.name } : { _id: id }
             };
             setDumps([...dumps, newDump]);
+            addDump(newDump);
             setFormData({ title: "", content: "" });
 
         } catch (err) {
@@ -231,6 +240,7 @@ export default function HiveFeed() {
                 try {
                     await api.delete(`/dumps/${dumpId}`);
                     setDumps(dumps.filter(d => d._id !== dumpId));
+                    deleteDump(dumpId);
                     toast.success("Message deleted");
                 } catch (err) {
                     toast.error("Could not delete");
@@ -507,4 +517,4 @@ export default function HiveFeed() {
             />
         </div>
     );
-};
+}
